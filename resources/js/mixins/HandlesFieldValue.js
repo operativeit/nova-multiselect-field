@@ -61,6 +61,12 @@ export default {
       return !this.currentField.singleSelect;
     },
 
+    isAsyncOptionGroups() {
+      return (
+        !!this.asyncOptions && !!this.asyncOptions.find(opt => opt.values && Array.isArray(opt.values))
+      );
+    },
+
     isOptionGroups() {
       return (
         !!this.currentField.options && !!this.currentField.options.find(opt => opt.values && Array.isArray(opt.values))

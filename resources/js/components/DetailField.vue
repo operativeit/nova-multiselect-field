@@ -6,7 +6,7 @@
         :href="$url(`/resources/${field.belongsToResourceName}/${field.value}`)"
         class="link-default no-underline font-bold dim"
       >
-        {{ field.belongsToDisplayValue }}
+        AAA{{ field.belongsToDisplayValue }}
       </Link>
 
       <nova-multiselect-detail-field-value v-else-if="isMultiselect" :field="field" :values="values" />

@@ -11,8 +11,8 @@
           @search-change="tryToFetchOptions"
           track-by="value"
           label="label"
-          :group-label="isOptionGroups ? 'label' : void 0"
-          :group-values="isOptionGroups ? 'values' : void 0"
+          :group-label="isOptionGroups||isAsyncOptionGroups? 'label' : void 0"
+          :group-values="isOptionGroups||isAsyncOptionGroups? 'values' : void 0"
           :group-select="currentField.groupSelect || false"
           ref="multiselect"
           :value="selected"
@@ -304,7 +304,7 @@ export default {
       });
 
       this.options = this.options.map(option => {
-        if (this.isOptionGroups) {
+        if (option.group) {
           // Support for option groups
           return {
             ...option,
@@ -355,6 +355,17 @@ export default {
       else handlePositioning();
     },
 
+    prepareAsyncOptions(data) {
+        if (Object.entries(data).find(opt => opt[1].group))  {
+          return Object.entries(Object.groupBy(Object.entries(data)
+            .map(entry => ({ label: entry[1].label, value: entry[0], group: entry[1].group })), o => o.group ))
+            .map(([label, v]) => ({label, values:
+               v.map(({group, ...rest}) => rest)}));
+        } else {
+          return Object.entries(data).map(entry => ({ label: entry[1], value: entry[0] }));
+        }
+    },
+
     addTag(newTag) {
       const tag = {
         label: newTag,
@@ -374,12 +385,12 @@ export default {
       try {
         const resourceId = this.resourceId || '';
         const { data } = await Nova.request().get(`${this.currentField.apiUrl}`, { params: { search, resourceId } });
-
+	
         // Response is not an array or an object
         if (typeof data !== 'object') throw new Error('Server response was invalid.');
 
         // Is array
-        if (Array.isArray(data)) {
+        if (Array.isArray(data)) { 
           this.asyncOptions = data;
           this.isLoading = false;
           return;
@@ -400,7 +411,7 @@ export default {
           return;
         }
 
-        this.asyncOptions = Object.entries(data).map(entry => ({ label: entry[1], value: entry[0] }));
+        this.asyncOptions  = this.prepareAsyncOptions(data);
         this.isLoading = false;
       } catch (error) {
         console.error('Error performing search:', error);
@@ -420,10 +431,19 @@ export default {
       } else {
         this.asyncOptions = [];
       }
+
     },
 
-    onSyncedField() {
+    async onSyncedField() {
       this.options = this.currentField.options || [];
+
+      if (this.currentField.apiUrl) {
+         const resourceId = this.resourceId || '';
+         const { data } = await Nova.request().get(`${this.currentField.apiUrl}`, { params: { resourceId } });
+
+	 this.asyncOptions  = this.prepareAsyncOptions(data);
+      }
+
       this.setInitialValue();
     },
   },
